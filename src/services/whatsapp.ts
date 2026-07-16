@@ -87,6 +87,9 @@ export async function sendMessage(
     };
   }
 
+  console.log('[whatsapp] sendMessage request', JSON.stringify({ to: normalizedPhone, type: body.type, hasMedia: !!mediaUrl, url }));
+  console.log('[whatsapp] sendMessage body', JSON.stringify(body));
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -96,13 +99,18 @@ export async function sendMessage(
     body: JSON.stringify(body),
   });
 
+  console.log('[whatsapp] sendMessage response status', response.status, response.statusText);
+
   const data: any = await response.json();
+  console.log('[whatsapp] sendMessage response body', JSON.stringify(data));
 
   if (!response.ok) {
     const errMsg =
       data.error?.error_user_msg ||
       data.error?.message ||
       `Error ${response.status}`;
+
+    console.log('[whatsapp] sendMessage error', JSON.stringify({ to: normalizedPhone, code: data.error?.code, error: errMsg }));
 
     if (
       data.error?.code === 131047 ||
@@ -121,6 +129,8 @@ export async function sendMessage(
       to: normalizedPhone,
     };
   }
+
+  console.log('[whatsapp] sendMessage success', JSON.stringify({ to: normalizedPhone, messageId: data.messages?.[0]?.id }));
 
   return {
     success: true,

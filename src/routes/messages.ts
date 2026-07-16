@@ -19,7 +19,11 @@ messageRoutes.post('/send', async (c) => {
       return c.json({ error: 'Campos requeridos: to, content' }, 400);
     }
 
+    console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, campaignId }));
+
     const result = await sendMessage(to, content, c.env, mediaUrl);
+
+    console.log('[messages] POST /send result', JSON.stringify(result));
 
     let status: MessageStatus;
     if (result.success) {
