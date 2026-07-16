@@ -87,3 +87,48 @@ export interface ListCampaignsResponse {
   page: number;
   pageSize: number;
 }
+
+// --- WhatsApp Templates ---
+
+export interface TemplateComponentExample {
+  header_handle?: string[];
+  header_text?: string[];
+  body_text_named_params?: { param_name: string; example: string }[];
+}
+
+export interface TemplateComponent {
+  type: 'HEADER' | 'BODY' | 'FOOTER' | 'BUTTONS';
+  format?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'LOCATION';
+  text?: string;
+  example?: TemplateComponentExample;
+}
+
+export interface WhatsAppTemplate {
+  name: string;
+  parameter_format: 'NAMED' | 'POSITIONAL';
+  components: TemplateComponent[];
+  language: string;
+  status: string;
+  category: string;
+  sub_category?: string;
+  id: string;
+}
+
+export interface WhatsAppTemplatesResponse {
+  data: WhatsAppTemplate[];
+  paging?: { cursors: { before: string; after: string } };
+}
+
+export interface WhatsAppTemplateDoc {
+  _id?: ObjectId;
+  name: string;
+  whatsappId: string;
+  language: string;
+  status: string;
+  category: string;
+  parameter_format: string;
+  components: TemplateComponent[];
+  lastSyncedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

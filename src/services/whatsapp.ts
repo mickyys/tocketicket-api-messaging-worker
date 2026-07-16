@@ -1,4 +1,4 @@
-import type { SendMessageResponse } from '../types';
+import type { SendMessageResponse, WhatsAppTemplatesResponse } from '../types';
 
 export interface WhatsAppEnv {
   WHATSAPP_TOKEN?: string;
@@ -6,6 +6,7 @@ export interface WhatsAppEnv {
   WHATSAPP_API_BASE_URL?: string;
   WHATSAPP_API_VERSION?: string;
   WHATSAPP_VERIFY_TOKEN?: string;
+  WHATSAPP_BUSINESS_ACCOUNT_ID?: string;
 }
 
 export function normalizePhone(phone: string): string {
@@ -113,6 +114,29 @@ export async function sendMessage(
     messageId: data.messages?.[0]?.id,
     to: normalizedPhone,
   };
+}
+
+export async function fetchTemplates(env: WhatsAppEnv): Promise<WhatsAppTemplatesResponse> {
+  const token = env.WHATSAPP_TOKEN || '';
+  const baseUrl = env.WHATSAPP_API_BASE_URL || 'https://graph.facebook.com';
+  const version = env.WHATSAPP_API_VERSION || 'v22.0';
+  const businessAccountId = env.WHATSAPP_BUSINESS_ACCOUNT_ID || '';
+
+  if (!businessAccountId) {
+    throw new Error('WHATSAPP_BUSINESS_ACCOUNT_ID no configurado');
+  }
+
+  const url = `${baseUrl}/${version}/${businessAccountId}/message_templates`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data: any = await response.json().catch(() => ({}));
+    throw new Error(data.error?.message || `Error ${response.status} al obtener templates`);
+  }
+
+  return response.json() as Promise<WhatsAppTemplatesResponse>;
 }
 
 export function verifyWebhookToken(token: string, env: WhatsAppEnv): boolean {

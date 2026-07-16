@@ -6,7 +6,9 @@ import type {
   CampaignProgress,
   CampaignStatus,
   ListCampaignsResponse,
+  WhatsAppTemplateDoc,
 } from '../types';
+import { fetchTemplates, type WhatsAppEnv } from './whatsapp';
 
 let client: MongoClient | null = null;
 let db: Db | null = null;
@@ -193,4 +195,71 @@ export async function deleteCampaign(env: MongoEnv, id: string): Promise<boolean
     _id: toCampaignId(id),
   } as Filter<WhatsAppCampaign>);
   return result.deletedCount > 0;
+}
+
+// --- WhatsApp Templates ---
+
+function templateCollection(env: MongoEnv): Promise<Collection<WhatsAppTemplateDoc>> {
+  return getDb(env).then((d) => d.collection<WhatsAppTemplateDoc>('whatsapp_templates'));
+}
+
+export async function createTemplateDoc(env: MongoEnv, name: string): Promise<WhatsAppTemplateDoc> {
+  const col = await templateCollection(env);
+
+  const existing = await col.findOne({ name });
+  if (existing) return existing;
+
+  const now = new Date();
+  const doc: WhatsAppTemplateDoc = {
+    name,
+    whatsappId: '',
+    language: '',
+    status: 'pending_sync',
+    category: '',
+    parameter_format: 'NAMED',
+    components: [],
+    lastSyncedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const result = await col.insertOne(doc as any);
+  return { ...doc, _id: result.insertedId };
+}
+
+export async function syncTemplatesFromAPI(env: MongoEnv & WhatsAppEnv): Promise<WhatsAppTemplateDoc[]> {
+  const response = await fetchTemplates(env);
+  const col = await templateCollection(env);
+  const now = new Date();
+  const docs: WhatsAppTemplateDoc[] = [];
+
+  for (const tpl of response.data) {
+    const doc = {
+      name: tpl.name,
+      whatsappId: tpl.id,
+      language: tpl.language,
+      status: tpl.status,
+      category: tpl.category,
+      parameter_format: tpl.parameter_format,
+      components: tpl.components,
+      lastSyncedAt: now,
+      updatedAt: now,
+    };
+
+    await col.updateOne(
+      { name: tpl.name },
+      { $set: doc, $setOnInsert: { createdAt: now } },
+      { upsert: true }
+    );
+
+    const updated = await col.findOne({ name: tpl.name });
+    if (updated) docs.push(updated);
+  }
+
+  return docs;
+}
+
+export async function listTemplates(env: MongoEnv): Promise<WhatsAppTemplateDoc[]> {
+  const col = await templateCollection(env);
+  return col.find({}).sort({ name: 1 }).toArray();
 }

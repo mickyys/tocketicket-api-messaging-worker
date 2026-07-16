@@ -4,6 +4,7 @@ import { healthRoutes } from './routes/health';
 import { campaignRoutes } from './routes/campaigns';
 import { messageRoutes } from './routes/messages';
 import { webhookRoutes } from './routes/webhooks';
+import { templateRoutes } from './routes/templates';
 
 const app = new Hono();
 
@@ -21,6 +22,7 @@ app.route('/health', healthRoutes);
 app.route('/api/campaigns', campaignRoutes);
 app.route('/api/messages', messageRoutes);
 app.route('/webhook', webhookRoutes);
+app.route('/api/templates', templateRoutes);
 
 app.get('/', (c) => c.json({ service: 'api-messaging-worker', version: '1.0.0' }));
 
