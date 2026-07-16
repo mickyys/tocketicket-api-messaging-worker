@@ -13,18 +13,27 @@ messageRoutes.use('*', authMiddleware);
 messageRoutes.post('/send', async (c) => {
   try {
     const body = await c.req.json<SendMessageRequest>();
-    const { to, content, mediaUrl, template, campaignId, participantId, participantName, categoryName } = body;
+    const { to, content, mediaUrl, template, campaignId, participantId, participantName, categoryName, templateName, templateLanguage, templateComponents } = body;
 
-    if (!to || !content) {
-      return c.json({ error: 'Campos requeridos: to, content' }, 400);
+    if (!to) {
+      return c.json({ error: 'Campo requerido: to' }, 400);
+    }
+
+    if (!content && !templateName) {
+      return c.json({ error: 'Se requiere content o templateName' }, 400);
     }
 
     const organizerId = c.get('organizerId');
     const organizerName = c.get('organizerName');
 
-    console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, campaignId, template }));
+    console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, hasTemplate: !!templateName, templateName, campaignId }));
 
-    const result = await sendMessage(to, content, c.env, mediaUrl);
+    const result = await sendMessage(to, content, c.env, {
+      mediaUrl,
+      templateName,
+      templateLanguage,
+      templateComponents,
+    });
 
     console.log('[messages] POST /send result', JSON.stringify(result));
 

@@ -95,6 +95,23 @@ export interface SendMessageRequest {
   participantId?: string;
   participantName?: string;
   categoryName?: string;
+  templateName?: string;
+  templateLanguage?: string;
+  templateComponents?: WhatsAppTemplateComponent[];
+}
+
+export interface WhatsAppTemplateComponent {
+  type: 'header' | 'body' | 'footer' | 'buttons';
+  parameters: WhatsAppTemplateParameter[];
+}
+
+export interface WhatsAppTemplateParameter {
+  type: 'text' | 'image' | 'video' | 'document';
+  parameter_name?: string;
+  text?: string;
+  image?: { link: string };
+  video?: { link: string };
+  document?: { link: string };
 }
 
 export interface SendMessageResponse {

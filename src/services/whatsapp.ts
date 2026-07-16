@@ -53,11 +53,28 @@ export async function validateToken(env: WhatsAppEnv): Promise<{ valid: boolean;
   }
 }
 
+export interface SendMessageOptions {
+  mediaUrl?: string;
+  templateName?: string;
+  templateLanguage?: string;
+  templateComponents?: Array<{
+    type: 'header' | 'body' | 'footer' | 'buttons';
+    parameters: Array<{
+      type: 'text' | 'image' | 'video' | 'document';
+      parameter_name?: string;
+      text?: string;
+      image?: { link: string };
+      video?: { link: string };
+      document?: { link: string };
+    }>;
+  }>;
+}
+
 export async function sendMessage(
   phone: string,
   content: string,
   env: WhatsAppEnv,
-  mediaUrl?: string
+  opts: SendMessageOptions = {}
 ): Promise<SendMessageResponse> {
   const token = env.WHATSAPP_TOKEN || '';
   const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
@@ -69,13 +86,24 @@ export async function sendMessage(
 
   let body: Record<string, any>;
 
-  if (mediaUrl) {
+  if (opts.templateName && opts.templateComponents) {
+    body = {
+      messaging_product: 'whatsapp',
+      to: normalizedPhone,
+      type: 'template',
+      template: {
+        name: opts.templateName,
+        language: { code: opts.templateLanguage || 'es_CL' },
+        components: opts.templateComponents,
+      },
+    };
+  } else if (opts.mediaUrl) {
     body = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
       to: normalizedPhone,
       type: 'image',
-      image: { link: mediaUrl },
+      image: { link: opts.mediaUrl },
     };
   } else {
     body = {
@@ -87,7 +115,7 @@ export async function sendMessage(
     };
   }
 
-  console.log('[whatsapp] sendMessage request', JSON.stringify({ to: normalizedPhone, type: body.type, hasMedia: !!mediaUrl, url }));
+  console.log('[whatsapp] sendMessage request', JSON.stringify({ to: normalizedPhone, type: body.type, hasMedia: !!opts.mediaUrl, hasTemplate: !!opts.templateName, url }));
   console.log('[whatsapp] sendMessage body', JSON.stringify(body));
 
   const response = await fetch(url, {
