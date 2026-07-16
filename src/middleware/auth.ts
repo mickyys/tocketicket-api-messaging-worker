@@ -10,12 +10,19 @@ export type AppContext = Context<{ Variables: AppVariables }>;
 
 export async function authMiddleware(c: AppContext, next: () => Promise<void>) {
   const authHeader = c.req.header('Authorization');
+  let token: string | undefined;
 
-  if (!authHeader) {
-    return c.json({ error: 'No autorizado' }, 401);
+  if (authHeader) {
+    token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  } else {
+    const cookieHeader = c.req.header('Cookie') || '';
+    const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]+)/);
+    token = match?.[1];
   }
 
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  if (!token) {
+    return c.json({ error: 'No autorizado' }, 401);
+  }
 
   try {
     const payload = parseToken(token);
