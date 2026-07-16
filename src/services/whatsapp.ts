@@ -6,7 +6,6 @@ export interface WhatsAppEnv {
   WHATSAPP_API_BASE_URL?: string;
   WHATSAPP_API_VERSION?: string;
   WHATSAPP_VERIFY_TOKEN?: string;
-  WHATSAPP_BUSINESS_ACCOUNT_ID?: string;
 }
 
 export function normalizePhone(phone: string): string {
@@ -143,13 +142,13 @@ export async function fetchTemplates(env: WhatsAppEnv): Promise<WhatsAppTemplate
   const token = env.WHATSAPP_TOKEN || '';
   const baseUrl = env.WHATSAPP_API_BASE_URL || 'https://graph.facebook.com';
   const version = env.WHATSAPP_API_VERSION || 'v22.0';
-  const businessAccountId = env.WHATSAPP_BUSINESS_ACCOUNT_ID || '';
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
 
-  if (!businessAccountId) {
-    throw new Error('WHATSAPP_BUSINESS_ACCOUNT_ID no configurado');
+  if (!phoneNumberId) {
+    throw new Error('WHATSAPP_PHONE_NUMBER_ID no configurado');
   }
 
-  const url = `${baseUrl}/${version}/${businessAccountId}/message_templates`;
+  const url = `${baseUrl}/${version}/${phoneNumberId}/message_templates`;
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });

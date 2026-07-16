@@ -9,6 +9,7 @@ import type {
   WhatsAppTemplateDoc,
   TemplateConfigDoc,
   TemplateParameterMapping,
+  MessageLog,
 } from '../types';
 import { fetchTemplates, type WhatsAppEnv } from './whatsapp';
 
@@ -197,6 +198,94 @@ export async function deleteCampaign(env: MongoEnv, id: string): Promise<boolean
     _id: toCampaignId(id),
   } as Filter<WhatsAppCampaign>);
   return result.deletedCount > 0;
+}
+
+// --- Message Logs ---
+
+export async function saveMessageLog(
+  env: MongoEnv,
+  log: Omit<MessageLog, 'createdAt'>
+): Promise<void> {
+  const d = await getDb(env);
+  const col = d.collection<MessageLog>('message_logs');
+  await col.insertOne({ ...log, createdAt: new Date() } as any);
+}
+
+export async function getMessageLogs(
+  env: MongoEnv,
+  organizerId: string,
+  filters?: {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+    from?: string;
+    to?: string;
+  }
+): Promise<{ logs: MessageLog[]; total: number; page: number; pageSize: number }> {
+  const d = await getDb(env);
+  const col = d.collection<MessageLog>('message_logs');
+
+  const query: any = { organizerId };
+  if (filters?.status) query.status = filters.status;
+  if (filters?.from || filters?.to) {
+    query.sentAt = {};
+    if (filters?.from) query.sentAt.$gte = new Date(filters.from);
+    if (filters?.to) query.sentAt.$lte = new Date(filters.to);
+  }
+
+  const page = filters?.page || 1;
+  const pageSize = filters?.pageSize || 20;
+
+  const [logs, total] = await Promise.all([
+    col
+      .find(query)
+      .sort({ sentAt: -1 } as any)
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray(),
+    col.countDocuments(query),
+  ]);
+
+  return { logs: logs as unknown as MessageLog[], total, page, pageSize };
+}
+
+export async function getMessageStats(
+  env: MongoEnv,
+  organizerId: string,
+  filters?: { from?: string; to?: string }
+): Promise<{ total: number; sent: number; error: number; noWhatsapp: number }> {
+  const d = await getDb(env);
+  const col = d.collection<MessageLog>('message_logs');
+
+  const match: any = { organizerId };
+  if (filters?.from || filters?.to) {
+    match.sentAt = {};
+    if (filters?.from) match.sentAt.$gte = new Date(filters.from);
+    if (filters?.to) match.sentAt.$lte = new Date(filters.to);
+  }
+
+  const stats = await col
+    .aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          sent: { $sum: { $cond: [{ $eq: ['$status', 'sent'] }, 1, 0] } },
+          error: { $sum: { $cond: [{ $eq: ['$status', 'error'] }, 1, 0] } },
+          noWhatsapp: { $sum: { $cond: [{ $eq: ['$status', 'no-whatsapp'] }, 1, 0] } },
+        },
+      },
+    ])
+    .toArray();
+
+  if (stats.length === 0) return { total: 0, sent: 0, error: 0, noWhatsapp: 0 };
+  return {
+    total: stats[0].total,
+    sent: stats[0].sent,
+    error: stats[0].error,
+    noWhatsapp: stats[0].noWhatsapp,
+  };
 }
 
 // --- WhatsApp Templates ---

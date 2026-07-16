@@ -5,10 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
-WHATSAPP_PHONE_NUMBER_ID = "889873214206878"
+WHATSAPP_PHONE_NUMBER_ID = "815331504680848"
 WHATSAPP_API_BASE_URL = "https://graph.facebook.com"
-WHATSAPP_API_VERSION = "v22.0"
-WHATSAPP_BUSINESS_ACCOUNT_ID = "815331504680848"
+WHATSAPP_API_VERSION = "v25.0"
 MONGO_DB = "ticketera"
 
 [observability.logs]

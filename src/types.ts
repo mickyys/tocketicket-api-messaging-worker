@@ -71,11 +71,26 @@ export interface TemplateConfigDoc {
   updatedAt: Date;
 }
 
+export interface MessageLog {
+  _id?: ObjectId;
+  organizerId: string;
+  organizerName: string;
+  to: string;
+  template?: string;
+  status: MessageStatus;
+  messageId?: string;
+  error?: string;
+  campaignId?: string;
+  sentAt: Date;
+  createdAt: Date;
+}
+
 export interface SendMessageRequest {
   campaignId?: string;
   provider: string;
   to: string;
   content: string;
+  template?: string;
   mediaUrl?: string;
   participantId?: string;
   participantName?: string;
