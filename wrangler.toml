@@ -1,0 +1,24 @@
+name = "api-messaging-worker"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[vars]
+ENVIRONMENT = "development"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "placeholder-cache-id"
+
+# Secrets (set via `wrangler secret put`)
+# WHATSAPP_TOKEN - Meta WhatsApp Cloud API long-lived token
+# WHATSAPP_PHONE_NUMBER_ID - WhatsApp Business phone number ID
+# WHATSAPP_VERIFY_TOKEN - Webhook verification token
+# WHATSAPP_API_BASE_URL - https://graph.facebook.com
+# WHATSAPP_API_VERSION - v22.0
+# MONGO_URI - MongoDB Atlas connection string
+# MONGO_DB - Database name (tocketicket)
+# JWT_SECRET - For validating admin auth tokens
