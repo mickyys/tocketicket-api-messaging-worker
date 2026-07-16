@@ -3,6 +3,7 @@ import type { SendMessageResponse, WhatsAppTemplatesResponse } from '../types';
 export interface WhatsAppEnv {
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_WABA_ID?: string;
   WHATSAPP_API_BASE_URL?: string;
   WHATSAPP_API_VERSION?: string;
   WHATSAPP_VERIFY_TOKEN?: string;
@@ -142,13 +143,13 @@ export async function fetchTemplates(env: WhatsAppEnv): Promise<WhatsAppTemplate
   const token = env.WHATSAPP_TOKEN || '';
   const baseUrl = env.WHATSAPP_API_BASE_URL || 'https://graph.facebook.com';
   const version = env.WHATSAPP_API_VERSION || 'v22.0';
-  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
+  const wabaId = env.WHATSAPP_WABA_ID || '';
 
-  if (!phoneNumberId) {
-    throw new Error('WHATSAPP_PHONE_NUMBER_ID no configurado');
+  if (!wabaId) {
+    throw new Error('WHATSAPP_WABA_ID no configurado');
   }
 
-  const url = `${baseUrl}/${version}/${phoneNumberId}/message_templates`;
+  const url = `${baseUrl}/${version}/${wabaId}/message_templates`;
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
