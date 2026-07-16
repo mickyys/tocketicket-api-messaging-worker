@@ -1,4 +1,4 @@
-name = "api-messaging-worker"
+name = "tocketicket-api-messaging-worker"
 main = "src/index.ts"
 compatibility_date = "2025-01-15"
 compatibility_flags = ["nodejs_compat"]
@@ -8,10 +8,6 @@ vars = { ENVIRONMENT = "production" }
 
 [vars]
 ENVIRONMENT = "development"
-
-[[kv_namespaces]]
-binding = "CACHE"
-id = "placeholder-cache-id"
 
 # Secrets (set via `wrangler secret put`)
 # WHATSAPP_TOKEN - Meta WhatsApp Cloud API long-lived token
