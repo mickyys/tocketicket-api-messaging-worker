@@ -3,34 +3,13 @@ main = "src/index.ts"
 compatibility_date = "2025-01-15"
 compatibility_flags = ["nodejs_compat"]
 
-[env.production]
-vars = { ENVIRONMENT = "production" }
-
 [vars]
-ENVIRONMENT = "development"
-
-# Secrets (set via `wrangler secret put`)
-# WHATSAPP_TOKEN - Meta WhatsApp Cloud API long-lived token
-# WHATSAPP_PHONE_NUMBER_ID - WhatsApp Business phone number ID
-# WHATSAPP_VERIFY_TOKEN - Webhook verification token
-# WHATSAPP_API_BASE_URL - https://graph.facebook.com
-# WHATSAPP_API_VERSION - v22.0
-# MONGO_URI - MongoDB Atlas connection string
-# MONGO_DB - Database name (tocketicket)
-# JWT_SECRET - For validating admin auth tokens
+ENVIRONMENT = "production"
+WHATSAPP_PHONE_NUMBER_ID = "889873214206878"
+WHATSAPP_API_BASE_URL = "https://graph.facebook.com"
+WHATSAPP_API_VERSION = "v22.0"
+MONGO_DB = "ticketera"
 
 [observability]
-enabled = false
-head_sampling_rate = 1
-
-[observability.logs]
-enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
-
-[observability.traces]
-enabled = false
-persist = true
-head_sampling_rate = 1
-
+logs.enabled = false
+logs.invocation_logs = true
