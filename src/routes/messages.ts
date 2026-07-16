@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { authMiddleware, type AppVariables } from '../middleware/auth';
-import { sendMessage } from '../services/whatsapp';
-import { addMessageResult } from '../services/db';
+import { sendMessage, type WhatsAppEnv } from '../services/whatsapp';
+import { addMessageResult, type MongoEnv } from '../services/db';
 import type { SendMessageRequest, MessageStatus } from '../types';
 
-const messageRoutes = new Hono<{ Variables: AppVariables }>();
+type Bindings = WhatsAppEnv & MongoEnv;
+
+const messageRoutes = new Hono<{ Variables: AppVariables; Bindings: Bindings }>();
 
 messageRoutes.use('*', authMiddleware);
 
@@ -17,7 +19,7 @@ messageRoutes.post('/send', async (c) => {
       return c.json({ error: 'Campos requeridos: to, content' }, 400);
     }
 
-    const result = await sendMessage(to, content);
+    const result = await sendMessage(to, content, c.env);
 
     let status: MessageStatus;
     if (result.success) {
@@ -29,7 +31,7 @@ messageRoutes.post('/send', async (c) => {
     }
 
     if (campaignId) {
-      await addMessageResult(campaignId, {
+      await addMessageResult(c.env, campaignId, {
         participantId: participantId || '',
         participantName: participantName || '',
         phone: result.to,

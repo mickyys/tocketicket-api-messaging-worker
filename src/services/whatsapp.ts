@@ -1,27 +1,11 @@
 import type { SendMessageResponse } from '../types';
 
-interface WhatsAppEnv {
-  WHATSAPP_TOKEN: string;
-  WHATSAPP_PHONE_NUMBER_ID: string;
-  WHATSAPP_API_BASE_URL: string;
-  WHATSAPP_API_VERSION: string;
-  WHATSAPP_VERIFY_TOKEN: string;
-}
-
-function getEnv(): WhatsAppEnv {
-  return {
-    WHATSAPP_TOKEN: (globalThis as any).WHATSAPP_TOKEN || '',
-    WHATSAPP_PHONE_NUMBER_ID: (globalThis as any).WHATSAPP_PHONE_NUMBER_ID || '',
-    WHATSAPP_API_BASE_URL:
-      (globalThis as any).WHATSAPP_API_BASE_URL || 'https://graph.facebook.com',
-    WHATSAPP_API_VERSION: (globalThis as any).WHATSAPP_API_VERSION || 'v22.0',
-    WHATSAPP_VERIFY_TOKEN: (globalThis as any).WHATSAPP_VERIFY_TOKEN || '',
-  };
-}
-
-function apiUrl(): string {
-  const env = getEnv();
-  return `${env.WHATSAPP_API_BASE_URL}/${env.WHATSAPP_API_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}`;
+export interface WhatsAppEnv {
+  WHATSAPP_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_API_BASE_URL?: string;
+  WHATSAPP_API_VERSION?: string;
+  WHATSAPP_VERIFY_TOKEN?: string;
 }
 
 export function normalizePhone(phone: string): string {
@@ -32,9 +16,11 @@ export function normalizePhone(phone: string): string {
   return '56' + cleaned;
 }
 
-export async function validateToken(): Promise<{ valid: boolean; error?: string }> {
-  const env = getEnv();
-  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
+export async function validateToken(env: WhatsAppEnv): Promise<{ valid: boolean; error?: string }> {
+  const token = env.WHATSAPP_TOKEN || '';
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
+
+  if (!token || !phoneNumberId) {
     return {
       valid: false,
       error: 'WHATSAPP_TOKEN y WHATSAPP_PHONE_NUMBER_ID son requeridos',
@@ -42,9 +28,11 @@ export async function validateToken(): Promise<{ valid: boolean; error?: string 
   }
 
   try {
-    const url = `${env.WHATSAPP_API_BASE_URL}/${env.WHATSAPP_API_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}`;
+    const baseUrl = env.WHATSAPP_API_BASE_URL || 'https://graph.facebook.com';
+    const version = env.WHATSAPP_API_VERSION || 'v22.0';
+    const url = `${baseUrl}/${version}/${phoneNumberId}`;
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (response.ok) {
@@ -66,11 +54,16 @@ export async function validateToken(): Promise<{ valid: boolean; error?: string 
 
 export async function sendMessage(
   phone: string,
-  content: string
+  content: string,
+  env: WhatsAppEnv
 ): Promise<SendMessageResponse> {
-  const env = getEnv();
+  const token = env.WHATSAPP_TOKEN || '';
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
+  const baseUrl = env.WHATSAPP_API_BASE_URL || 'https://graph.facebook.com';
+  const version = env.WHATSAPP_API_VERSION || 'v22.0';
+
   const normalizedPhone = normalizePhone(phone);
-  const url = `${apiUrl()}/messages`;
+  const url = `${baseUrl}/${version}/${phoneNumberId}/messages`;
 
   const body = {
     messaging_product: 'whatsapp',
@@ -83,7 +76,7 @@ export async function sendMessage(
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
@@ -122,7 +115,6 @@ export async function sendMessage(
   };
 }
 
-export function verifyWebhookToken(token: string): boolean {
-  const env = getEnv();
-  return token === env.WHATSAPP_VERIFY_TOKEN;
+export function verifyWebhookToken(token: string, env: WhatsAppEnv): boolean {
+  return token === (env.WHATSAPP_VERIFY_TOKEN || '');
 }

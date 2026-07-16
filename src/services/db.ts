@@ -11,30 +11,27 @@ import type {
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
-function getMongoUri(): string {
-  return (globalThis as any).MONGO_URI || 'mongodb://localhost:27017';
+export interface MongoEnv {
+  MONGO_URI?: string;
+  MONGO_DB?: string;
 }
 
-function getDbName(): string {
-  return (globalThis as any).MONGO_DB || 'tocketicket';
-}
-
-async function getDb(): Promise<Db> {
+async function getDb(env: MongoEnv): Promise<Db> {
   if (db) return db;
 
-  const uri = getMongoUri();
+  const uri = env.MONGO_URI || 'mongodb://localhost:27017';
   client = new MongoClient(uri, {
     serverSelectionTimeoutMS: 10000,
     connectTimeoutMS: 10000,
   } as MongoClientOptions);
 
   await client.connect();
-  db = client.db(getDbName());
+  db = client.db(env.MONGO_DB || 'tocketicket');
   return db;
 }
 
-function collection(): Promise<Collection<WhatsAppCampaign>> {
-  return getDb().then((d) => d.collection<WhatsAppCampaign>('whatsapp_campaigns'));
+function collection(env: MongoEnv): Promise<Collection<WhatsAppCampaign>> {
+  return getDb(env).then((d) => d.collection<WhatsAppCampaign>('whatsapp_campaigns'));
 }
 
 function toCampaignId(id: string | ObjectId): ObjectId {
@@ -43,9 +40,10 @@ function toCampaignId(id: string | ObjectId): ObjectId {
 }
 
 export async function createCampaign(
+  env: MongoEnv,
   req: CreateCampaignRequest
 ): Promise<WhatsAppCampaign> {
-  const col = await collection();
+  const col = await collection(env);
   const now = new Date();
 
   const campaign: WhatsAppCampaign = {
@@ -75,17 +73,18 @@ export async function createCampaign(
   return { ...campaign, _id: result.insertedId };
 }
 
-export async function getCampaign(id: string): Promise<WhatsAppCampaign | null> {
-  const col = await collection();
+export async function getCampaign(env: MongoEnv, id: string): Promise<WhatsAppCampaign | null> {
+  const col = await collection(env);
   return col.findOne({ _id: toCampaignId(id) } as Filter<WhatsAppCampaign>);
 }
 
 export async function listCampaigns(
+  env: MongoEnv,
   organizerId: string,
   page: number = 1,
   pageSize: number = 20
 ): Promise<ListCampaignsResponse> {
-  const col = await collection();
+  const col = await collection(env);
   const filter = { organizerId } as Filter<WhatsAppCampaign>;
   const skip = (page - 1) * pageSize;
 
@@ -108,10 +107,11 @@ export async function listCampaigns(
 }
 
 export async function updateCampaignStatus(
+  env: MongoEnv,
   id: string,
   status: CampaignStatus
 ): Promise<WhatsAppCampaign | null> {
-  const col = await collection();
+  const col = await collection(env);
   const now = new Date();
   const update: any = {
     $set: {
@@ -125,14 +125,15 @@ export async function updateCampaignStatus(
   }
 
   await col.updateOne({ _id: toCampaignId(id) } as Filter<WhatsAppCampaign>, update);
-  return getCampaign(id);
+  return getCampaign(env, id);
 }
 
 export async function addMessageResult(
+  env: MongoEnv,
   campaignId: string,
   result: CampaignMessageResult
 ): Promise<WhatsAppCampaign | null> {
-  const col = await collection();
+  const col = await collection(env);
   const now = new Date();
 
   const increment: any = {};
@@ -160,13 +161,14 @@ export async function addMessageResult(
     } as any
   );
 
-  return getCampaign(campaignId);
+  return getCampaign(env, campaignId);
 }
 
 export async function getCampaignProgress(
+  env: MongoEnv,
   id: string
 ): Promise<CampaignProgress | null> {
-  const campaign = await getCampaign(id);
+  const campaign = await getCampaign(env, id);
   if (!campaign) return null;
 
   return {
@@ -185,8 +187,8 @@ export async function getCampaignProgress(
   };
 }
 
-export async function deleteCampaign(id: string): Promise<boolean> {
-  const col = await collection();
+export async function deleteCampaign(env: MongoEnv, id: string): Promise<boolean> {
+  const col = await collection(env);
   const result = await col.deleteOne({
     _id: toCampaignId(id),
   } as Filter<WhatsAppCampaign>);

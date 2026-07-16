@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
-import { validateToken } from '../services/whatsapp';
+import { validateToken, type WhatsAppEnv } from '../services/whatsapp';
 
-const healthRoutes = new Hono();
+type Bindings = WhatsAppEnv;
+
+const healthRoutes = new Hono<{ Bindings: Bindings }>();
 
 healthRoutes.get('/', async (c) => {
-  const result = await validateToken();
+  const result = await validateToken(c.env);
 
   return c.json({
     status: result.valid ? 'ok' : 'error',

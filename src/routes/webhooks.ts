@@ -1,14 +1,16 @@
 import { Hono } from 'hono';
-import { verifyWebhookToken } from '../services/whatsapp';
+import { verifyWebhookToken, type WhatsAppEnv } from '../services/whatsapp';
 
-const webhookRoutes = new Hono();
+type Bindings = WhatsAppEnv;
+
+const webhookRoutes = new Hono<{ Bindings: Bindings }>();
 
 webhookRoutes.get('/', (c) => {
   const mode = c.req.query('hub.mode');
   const token = c.req.query('hub.verify_token');
   const challenge = c.req.query('hub.challenge');
 
-  if (mode === 'subscribe' && token && verifyWebhookToken(token)) {
+  if (mode === 'subscribe' && token && verifyWebhookToken(token, c.env)) {
     return c.text(challenge || '', 200);
   }
 

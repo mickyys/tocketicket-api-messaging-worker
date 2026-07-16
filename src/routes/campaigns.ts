@@ -7,10 +7,13 @@ import {
   updateCampaignStatus,
   getCampaignProgress,
   deleteCampaign,
+  type MongoEnv,
 } from '../services/db';
 import type { CampaignStatus } from '../types';
 
-const campaignRoutes = new Hono<{ Variables: AppVariables }>();
+type Bindings = MongoEnv;
+
+const campaignRoutes = new Hono<{ Variables: AppVariables; Bindings: Bindings }>();
 
 campaignRoutes.use('*', authMiddleware);
 
@@ -20,7 +23,7 @@ campaignRoutes.post('/', async (c) => {
     const organizerId = c.get('organizerId') || body.organizerId;
     const organizerName = c.get('organizerName') || body.organizerName;
 
-    const campaign = await createCampaign({
+    const campaign = await createCampaign(c.env, {
       organizerId,
       organizerName,
       eventId: body.eventId,
@@ -46,7 +49,7 @@ campaignRoutes.get('/', async (c) => {
     const page = parseInt(c.req.query('page') || '1', 10);
     const pageSize = parseInt(c.req.query('pageSize') || '20', 10);
 
-    const result = await listCampaigns(organizerId, page, pageSize);
+    const result = await listCampaigns(c.env, organizerId, page, pageSize);
     return c.json(result);
   } catch (err: any) {
     return c.json({ error: err.message || 'Error al listar campanas' }, 500);
@@ -55,7 +58,7 @@ campaignRoutes.get('/', async (c) => {
 
 campaignRoutes.get('/:id', async (c) => {
   try {
-    const campaign = await getCampaign(c.req.param('id'));
+    const campaign = await getCampaign(c.env, c.req.param('id'));
     if (!campaign) {
       return c.json({ error: 'Campana no encontrada' }, 404);
     }
@@ -74,7 +77,7 @@ campaignRoutes.put('/:id/status', async (c) => {
       return c.json({ error: 'Estado invalido' }, 400);
     }
 
-    const campaign = await updateCampaignStatus(c.req.param('id'), status);
+    const campaign = await updateCampaignStatus(c.env, c.req.param('id'), status);
     if (!campaign) {
       return c.json({ error: 'Campana no encontrada' }, 404);
     }
@@ -86,7 +89,7 @@ campaignRoutes.put('/:id/status', async (c) => {
 
 campaignRoutes.get('/:id/progress', async (c) => {
   try {
-    const progress = await getCampaignProgress(c.req.param('id'));
+    const progress = await getCampaignProgress(c.env, c.req.param('id'));
     if (!progress) {
       return c.json({ error: 'Campana no encontrada' }, 404);
     }
@@ -98,7 +101,7 @@ campaignRoutes.get('/:id/progress', async (c) => {
 
 campaignRoutes.delete('/:id', async (c) => {
   try {
-    const deleted = await deleteCampaign(c.req.param('id'));
+    const deleted = await deleteCampaign(c.env, c.req.param('id'));
     if (!deleted) {
       return c.json({ error: 'Campana no encontrada' }, 404);
     }
@@ -111,7 +114,7 @@ campaignRoutes.delete('/:id', async (c) => {
 campaignRoutes.get('/:id/stream', async (c) => {
   const campaignId = c.req.param('id');
 
-  const campaign = await getCampaign(campaignId);
+  const campaign = await getCampaign(c.env, campaignId);
   if (!campaign) {
     return c.json({ error: 'Campana no encontrada' }, 404);
   }
@@ -123,7 +126,7 @@ campaignRoutes.get('/:id/stream', async (c) => {
       const sendSSE = async () => {
         if (controller.desiredSize === null) return;
 
-        const progress = await getCampaignProgress(campaignId);
+        const progress = await getCampaignProgress(c.env, campaignId);
         if (!progress) {
           controller.enqueue(encoder.encode('event: error\ndata: {"error":"Campana no encontrada"}\n\n'));
           controller.close();
