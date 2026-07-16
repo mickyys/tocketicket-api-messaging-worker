@@ -54,11 +54,29 @@ export interface CreateCampaignRequest {
   delayMs: number;
 }
 
+export interface TemplateParameterMapping {
+  paramName: string;
+  source: 'participant' | 'event' | 'manual' | 'media';
+  field?: string;
+  manualValue?: string;
+}
+
+export interface TemplateConfigDoc {
+  _id?: ObjectId;
+  templateId: string;
+  templateName: string;
+  organizerId: string;
+  parameterMappings: TemplateParameterMapping[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface SendMessageRequest {
   campaignId?: string;
   provider: string;
   to: string;
   content: string;
+  mediaUrl?: string;
   participantId?: string;
   participantName?: string;
   categoryName?: string;

@@ -7,6 +7,8 @@ import type {
   CampaignStatus,
   ListCampaignsResponse,
   WhatsAppTemplateDoc,
+  TemplateConfigDoc,
+  TemplateParameterMapping,
 } from '../types';
 import { fetchTemplates, type WhatsAppEnv } from './whatsapp';
 
@@ -262,4 +264,59 @@ export async function syncTemplatesFromAPI(env: MongoEnv & WhatsAppEnv): Promise
 export async function listTemplates(env: MongoEnv): Promise<WhatsAppTemplateDoc[]> {
   const col = await templateCollection(env);
   return col.find({}).sort({ name: 1 }).toArray();
+}
+
+// --- Template Config ---
+
+function templateConfigCollection(env: MongoEnv): Promise<Collection<TemplateConfigDoc>> {
+  return getDb(env).then((d) => d.collection<TemplateConfigDoc>('whatsapp_template_configs'));
+}
+
+export async function getTemplateConfig(
+  env: MongoEnv,
+  templateId: string,
+  organizerId: string
+): Promise<TemplateConfigDoc | null> {
+  const col = await templateConfigCollection(env);
+  return col.findOne({ templateId, organizerId } as any);
+}
+
+export async function upsertTemplateConfig(
+  env: MongoEnv,
+  config: {
+    templateId: string;
+    templateName: string;
+    organizerId: string;
+    parameterMappings: TemplateParameterMapping[];
+  }
+): Promise<TemplateConfigDoc> {
+  const col = await templateConfigCollection(env);
+  const now = new Date();
+
+  const existing = await col.findOne({ templateId: config.templateId, organizerId: config.organizerId } as any);
+
+  if (existing) {
+    await col.updateOne(
+      { _id: existing._id } as any,
+      {
+        $set: {
+          parameterMappings: config.parameterMappings,
+          updatedAt: now,
+        },
+      } as any
+    );
+    return { ...existing, parameterMappings: config.parameterMappings, updatedAt: now };
+  }
+
+  const doc: TemplateConfigDoc = {
+    templateId: config.templateId,
+    templateName: config.templateName,
+    organizerId: config.organizerId,
+    parameterMappings: config.parameterMappings,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const result = await col.insertOne(doc as any);
+  return { ...doc, _id: result.insertedId };
 }

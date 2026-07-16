@@ -13,13 +13,13 @@ messageRoutes.use('*', authMiddleware);
 messageRoutes.post('/send', async (c) => {
   try {
     const body = await c.req.json<SendMessageRequest>();
-    const { to, content, campaignId, participantId, participantName, categoryName } = body;
+    const { to, content, mediaUrl, campaignId, participantId, participantName, categoryName } = body;
 
     if (!to || !content) {
       return c.json({ error: 'Campos requeridos: to, content' }, 400);
     }
 
-    const result = await sendMessage(to, content, c.env);
+    const result = await sendMessage(to, content, c.env, mediaUrl);
 
     let status: MessageStatus;
     if (result.success) {

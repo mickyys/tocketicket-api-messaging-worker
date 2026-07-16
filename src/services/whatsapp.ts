@@ -56,7 +56,8 @@ export async function validateToken(env: WhatsAppEnv): Promise<{ valid: boolean;
 export async function sendMessage(
   phone: string,
   content: string,
-  env: WhatsAppEnv
+  env: WhatsAppEnv,
+  mediaUrl?: string
 ): Promise<SendMessageResponse> {
   const token = env.WHATSAPP_TOKEN || '';
   const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID || '';
@@ -66,13 +67,25 @@ export async function sendMessage(
   const normalizedPhone = normalizePhone(phone);
   const url = `${baseUrl}/${version}/${phoneNumberId}/messages`;
 
-  const body = {
-    messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to: normalizedPhone,
-    type: 'text',
-    text: { preview_url: false, body: content },
-  };
+  let body: Record<string, any>;
+
+  if (mediaUrl) {
+    body = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: normalizedPhone,
+      type: 'image',
+      image: { link: mediaUrl },
+    };
+  } else {
+    body = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: normalizedPhone,
+      type: 'text',
+      text: { preview_url: false, body: content },
+    };
+  }
 
   const response = await fetch(url, {
     method: 'POST',

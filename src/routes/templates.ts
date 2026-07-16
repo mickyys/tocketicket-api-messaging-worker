@@ -4,6 +4,8 @@ import {
   createTemplateDoc,
   syncTemplatesFromAPI,
   listTemplates,
+  getTemplateConfig,
+  upsertTemplateConfig,
   type MongoEnv,
 } from '../services/db';
 import type { WhatsAppEnv } from '../services/whatsapp';
@@ -51,6 +53,36 @@ templateRoutes.get('/', async (c) => {
     return c.json(docs);
   } catch (err: any) {
     return c.json({ error: err.message || 'Error al listar templates' }, 500);
+  }
+});
+
+templateRoutes.get('/:id/config', async (c) => {
+  try {
+    const templateId = c.req.param('id');
+    const organizerId = c.get('organizerId');
+    const config = await getTemplateConfig(c.env, templateId, organizerId);
+    return c.json(config || null);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Error al obtener config' }, 500);
+  }
+});
+
+templateRoutes.put('/:id/config', async (c) => {
+  try {
+    const templateId = c.req.param('id');
+    const organizerId = c.get('organizerId');
+    const body = await c.req.json();
+
+    const config = await upsertTemplateConfig(c.env, {
+      templateId,
+      templateName: body.templateName || '',
+      organizerId,
+      parameterMappings: body.parameterMappings || [],
+    });
+
+    return c.json(config);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Error al guardar config' }, 500);
   }
 });
 
