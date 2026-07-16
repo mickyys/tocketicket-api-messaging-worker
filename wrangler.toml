@@ -19,6 +19,6 @@ ENVIRONMENT = "development"
 # MONGO_DB - Database name (tocketicket)
 # JWT_SECRET - For validating admin auth tokens
 
-[observability]
-logs.enabled = false
-logs.invocation_logs = true
+[observability.logs]
+enabled = false
+invocation_logs = true
