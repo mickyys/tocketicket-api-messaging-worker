@@ -11,6 +11,6 @@ WHATSAPP_API_VERSION = "v22.0"
 WHATSAPP_BUSINESS_ACCOUNT_ID = "815331504680848"
 MONGO_DB = "ticketera"
 
-[observability]
-logs.enabled = false
-logs.invocation_logs = true
+[observability.logs]
+enabled = true
+invocation_logs = true
