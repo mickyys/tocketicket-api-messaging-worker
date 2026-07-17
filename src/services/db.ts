@@ -26,7 +26,8 @@ async function getDb(env: MongoEnv): Promise<Db> {
     try {
       await db.admin().ping();
       return db;
-    } catch {
+    } catch (err) {
+      console.error('[db] stale connection detected, reconnecting:', err);
       client = null;
       db = null;
     }
@@ -36,6 +37,7 @@ async function getDb(env: MongoEnv): Promise<Db> {
   client = new MongoClient(uri, {
     serverSelectionTimeoutMS: 10000,
     connectTimeoutMS: 10000,
+    socketTimeoutMS: 5000,
   } as MongoClientOptions);
 
   await client.connect();
