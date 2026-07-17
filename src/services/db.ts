@@ -430,3 +430,20 @@ export async function upsertTemplateConfig(
   const result = await col.insertOne(doc as any);
   return { ...doc, _id: result.insertedId };
 }
+
+export async function getEventDate(
+  env: MongoEnv,
+  eventId: string
+): Promise<string | undefined> {
+  const db = await getDb(env);
+  const col = db.collection('events');
+  const event = await col.findOne({ _id: new ObjectId(eventId) } as any);
+  if (!event) return undefined;
+  const startDate = (event as any).startDate;
+  if (!startDate) return undefined;
+  return new Date(startDate).toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}

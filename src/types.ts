@@ -91,6 +91,7 @@ export interface SendMessageRequest {
   to: string;
   content: string;
   template?: string;
+  templateId?: string;
   mediaUrl?: string;
   participantId?: string;
   participantName?: string;

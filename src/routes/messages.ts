@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { authMiddleware, type AppVariables } from '../middleware/auth';
 import { sendMessage, type WhatsAppEnv } from '../services/whatsapp';
-import { addMessageResult, saveMessageLog, getMessageLogs, getMessageStats, getCampaign, getTemplateConfigByName, type MongoEnv } from '../services/db';
+import { addMessageResult, saveMessageLog, getMessageLogs, getMessageStats, getCampaign, getTemplateConfig, getTemplateConfigByName, getEventDate, type MongoEnv } from '../services/db';
 import type { SendMessageRequest, MessageStatus } from '../types';
 
 type Bindings = WhatsAppEnv & MongoEnv;
@@ -13,7 +13,7 @@ messageRoutes.use('*', authMiddleware);
 messageRoutes.post('/send', async (c) => {
   try {
     const body = await c.req.json<SendMessageRequest>();
-    const { to, content, mediaUrl, template, campaignId, participantId, participantName, categoryName, templateName, templateLanguage, templateComponents, eventId, eventDate } = body;
+    const { to, content, mediaUrl, template, templateId, campaignId, participantId, participantName, categoryName, templateName, templateLanguage, templateComponents, eventId, eventDate } = body;
 
     if (!to) {
       return c.json({ error: 'Campo requerido: to' }, 400);
@@ -29,8 +29,10 @@ messageRoutes.post('/send', async (c) => {
     console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, hasTemplate: !!templateName, templateName, campaignId }));
 
     // Resolver parámetros vacíos desde la configuración del template
-    if (templateName && templateComponents) {
-      const config = await getTemplateConfigByName(c.env, templateName, organizerId);
+    if ((templateId || templateName) && templateComponents) {
+      const config = templateId
+        ? await getTemplateConfig(c.env, templateId, organizerId)
+        : await getTemplateConfigByName(c.env, templateName!, organizerId);
       if (config?.parameterMappings) {
         let resolvedEventDate = eventDate;
 
@@ -38,6 +40,9 @@ messageRoutes.post('/send', async (c) => {
           if (campaignId) {
             const campaign = await getCampaign(c.env, campaignId);
             resolvedEventDate = campaign?.eventDate;
+          }
+          if (!resolvedEventDate && eventId) {
+            resolvedEventDate = await getEventDate(c.env, eventId);
           }
         }
 
