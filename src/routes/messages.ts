@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { authMiddleware, type AppVariables } from '../middleware/auth';
 import { sendMessage, type WhatsAppEnv } from '../services/whatsapp';
-import { addMessageResult, saveMessageLog, getMessageLogs, getMessageStats, type MongoEnv } from '../services/db';
+import { addMessageResult, saveMessageLog, getMessageLogs, getMessageStats, getCampaign, getTemplateConfigByName, type MongoEnv } from '../services/db';
 import type { SendMessageRequest, MessageStatus } from '../types';
 
 type Bindings = WhatsAppEnv & MongoEnv;
@@ -13,7 +13,7 @@ messageRoutes.use('*', authMiddleware);
 messageRoutes.post('/send', async (c) => {
   try {
     const body = await c.req.json<SendMessageRequest>();
-    const { to, content, mediaUrl, template, campaignId, participantId, participantName, categoryName, templateName, templateLanguage, templateComponents } = body;
+    const { to, content, mediaUrl, template, campaignId, participantId, participantName, categoryName, templateName, templateLanguage, templateComponents, eventId, eventDate } = body;
 
     if (!to) {
       return c.json({ error: 'Campo requerido: to' }, 400);
@@ -27,6 +27,38 @@ messageRoutes.post('/send', async (c) => {
     const organizerName = c.get('organizerName');
 
     console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, hasTemplate: !!templateName, templateName, campaignId }));
+
+    // Resolver parámetros vacíos desde la configuración del template
+    if (templateName && templateComponents) {
+      const config = await getTemplateConfigByName(c.env, templateName, organizerId);
+      if (config?.parameterMappings) {
+        let resolvedEventDate = eventDate;
+
+        if (!resolvedEventDate) {
+          if (campaignId) {
+            const campaign = await getCampaign(c.env, campaignId);
+            resolvedEventDate = campaign?.eventDate;
+          }
+        }
+
+        for (const component of templateComponents) {
+          for (const param of component.parameters) {
+            if (param.text !== '' && param.image?.link) continue;
+
+            const mapping = config.parameterMappings.find(
+              (m) => m.paramName === param.parameter_name
+            );
+            if (!mapping) continue;
+
+            if (mapping.source === 'manual' && mapping.manualValue) {
+              param.text = mapping.manualValue;
+            } else if (mapping.source === 'event' && mapping.field === 'date' && resolvedEventDate) {
+              param.text = resolvedEventDate;
+            }
+          }
+        }
+      }
+    }
 
     const result = await sendMessage(to, content, c.env, {
       mediaUrl,

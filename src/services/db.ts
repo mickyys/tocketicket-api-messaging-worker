@@ -1,7 +1,4 @@
-import { EventEmitter } from 'events';
 import { MongoClient, Db, Collection, ObjectId, Filter, Sort, type MongoClientOptions } from 'mongodb';
-
-EventEmitter.defaultMaxListeners = 20;
 import type {
   WhatsAppCampaign,
   CampaignMessageResult,
@@ -383,6 +380,15 @@ export async function getTemplateConfig(
 ): Promise<TemplateConfigDoc | null> {
   const col = await templateConfigCollection(env);
   return col.findOne({ templateId, organizerId } as any);
+}
+
+export async function getTemplateConfigByName(
+  env: MongoEnv,
+  templateName: string,
+  organizerId: string
+): Promise<TemplateConfigDoc | null> {
+  const col = await templateConfigCollection(env);
+  return col.findOne({ templateName, organizerId } as any);
 }
 
 export async function upsertTemplateConfig(

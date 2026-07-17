@@ -98,6 +98,8 @@ export interface SendMessageRequest {
   templateName?: string;
   templateLanguage?: string;
   templateComponents?: WhatsAppTemplateComponent[];
+  eventId?: string;
+  eventDate?: string;
 }
 
 export interface WhatsAppTemplateComponent {
