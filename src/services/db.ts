@@ -15,6 +15,8 @@ import { fetchTemplates, type WhatsAppEnv } from './whatsapp';
 
 let client: MongoClient | null = null;
 let db: Db | null = null;
+let connectionTime = 0;
+const MAX_CONNECTION_AGE = 30000;
 
 export interface MongoEnv {
   MONGO_URI?: string;
@@ -22,15 +24,14 @@ export interface MongoEnv {
 }
 
 async function getDb(env: MongoEnv): Promise<Db> {
-  if (db) {
-    try {
-      await db.admin().ping();
-      return db;
-    } catch (err) {
-      console.error('[db] stale connection detected, reconnecting:', err);
-      client = null;
-      db = null;
-    }
+  if (db && Date.now() - connectionTime < MAX_CONNECTION_AGE) {
+    return db;
+  }
+
+  if (client) {
+    await client.close().catch(() => {});
+    client = null;
+    db = null;
   }
 
   const uri = env.MONGO_URI || 'mongodb://localhost:27017';
@@ -42,6 +43,7 @@ async function getDb(env: MongoEnv): Promise<Db> {
 
   await client.connect();
   db = client.db(env.MONGO_DB || 'tocketicket');
+  connectionTime = Date.now();
   return db;
 }
 
