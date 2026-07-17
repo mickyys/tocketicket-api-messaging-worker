@@ -75,12 +75,16 @@ export interface MessageLog {
   _id?: ObjectId;
   organizerId: string;
   organizerName: string;
+  userId?: string;
   to: string;
   template?: string;
   status: MessageStatus;
   messageId?: string;
   error?: string;
   campaignId?: string;
+  eventId?: string;
+  templateId?: string;
+  templateName?: string;
   sentAt: Date;
   createdAt: Date;
 }

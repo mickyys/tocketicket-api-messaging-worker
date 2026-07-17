@@ -28,7 +28,7 @@ export async function authMiddleware(c: AppContext, next: () => Promise<void>) {
     const payload = parseToken(token);
     c.set('organizerId', (payload.organizerId || payload.sub || '') as string);
     c.set('organizerName', (payload.organizerName || payload.name || '') as string);
-    c.set('userId', (payload.userId || payload.sub || '') as string);
+    c.set('userId', (payload.userId || payload.userID || payload.sub || '') as string);
     await next();
   } catch {
     return c.json({ error: 'Token invalido' }, 401);

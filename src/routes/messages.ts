@@ -25,6 +25,7 @@ messageRoutes.post('/send', async (c) => {
 
     const organizerId = c.get('organizerId');
     const organizerName = c.get('organizerName');
+    const userId = c.get('userId');
 
     console.log('[messages] POST /send request', JSON.stringify({ to, contentLength: content?.length, hasMedia: !!mediaUrl, hasTemplate: !!templateName, templateName, campaignId }));
 
@@ -88,12 +89,16 @@ messageRoutes.post('/send', async (c) => {
     await saveMessageLog(c.env, {
       organizerId,
       organizerName,
+      userId,
       to: result.to,
       template,
       status,
       messageId: result.messageId,
       error: result.error !== 'NO_WHATSAPP' ? result.error : undefined,
       campaignId,
+      eventId,
+      templateId,
+      templateName,
       sentAt,
     });
 
