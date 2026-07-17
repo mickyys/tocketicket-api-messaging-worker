@@ -22,7 +22,15 @@ export interface MongoEnv {
 }
 
 async function getDb(env: MongoEnv): Promise<Db> {
-  if (db) return db;
+  if (db) {
+    try {
+      await db.admin().ping();
+      return db;
+    } catch {
+      client = null;
+      db = null;
+    }
+  }
 
   const uri = env.MONGO_URI || 'mongodb://localhost:27017';
   client = new MongoClient(uri, {
