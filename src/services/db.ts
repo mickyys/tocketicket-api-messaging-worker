@@ -1,4 +1,7 @@
+import { EventEmitter } from 'events';
 import { MongoClient, Db, Collection, ObjectId, Filter, Sort, type MongoClientOptions } from 'mongodb';
+
+EventEmitter.defaultMaxListeners = 20;
 import type {
   WhatsAppCampaign,
   CampaignMessageResult,
